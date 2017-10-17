@@ -1,0 +1,5 @@
+# Thumbnails
+._*
+# Ignore any mex files
+core/mex_stuff/*
+*.m~
