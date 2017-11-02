@@ -4,9 +4,9 @@ close all
 %% load systems
 systems = Example_systems();
 %% choose system you want
-systemIndx = 5;
-A = systems(systemIndx).A;
-SIG_f = systems(systemIndx).SIG_f; 
+system_indx = 4;
+A = systems(system_indx).A;
+SIG_f = systems(system_indx).SIG_f; 
 
 %% Get the autocov of the full system
 [G,info] = var_to_autocov(A,SIG_f);
@@ -46,7 +46,10 @@ split_mask= eye(N);
 
 %% Get the parameters of the reduced model (denoted with subscript r)
 % Both time and frequency domain quantities are estimated
-[S_r,det_S_r,trace_S_r,prod_diag_S_r,A_r,SIG_r,masked_Delta] = get_reduced_S_from_autoCov(G,split_mask,max_order,freq_res);
+iter_max = 6000;
+gamma = 0.01;
+min_error = 1e-6;
+[S_r,det_S_r,trace_S_r,prod_diag_S_r,A_r,SIG_r,masked_Delta] = get_reduced_S_from_autoCov(G,split_mask,max_order,freq_res,iter_max,gamma,min_error);
 
 %% Finally, from the defintion of Phi G
 Phi_G = log (det(SIG_r) / det (SIG_f));
@@ -71,13 +74,9 @@ disp(multi_info-multi_info_2)
 
 %% plot time domain
 time_data = [multi_info Phi_G GC_x1_to_x2 GC_x2_to_x1 GC_x1_to_x2+GC_x2_to_x1];   
-if systemIndx<3 % for systems in which we are not interested in the sum of GC
-    max_iter = length(time_data)-1;
-    offset = 0;
-else % for systems in which we'd like to see the sum of GC
-    max_iter = length(time_data);
-    offset = 0.005;
-end
+
+max_iter = length(time_data);
+offset = 0.005;
 
 clf
 subplot(2,1,1);
@@ -131,35 +130,22 @@ sdecomp_Phi_G  = log ( real(det_S_r./det_S') );
 %% plot frequency domain
 subplot(2,1,2);
 
-if systemIndx<3
-    hold on
-    hl=plot(freqs,squeeze(spct_GC(1,2,:)),'r',freqs,squeeze(spct_GC(2,1,:)),'r--');
-    set(hl,'linewidth',4);
-    % hl=plot(freqs,squeeze(spct_GC(1,2,:))+squeeze(spct_GC(2,1,:)),'b-.');
-    % set(hl,'linewidth',2);
-    plot(freqs,sdecomp_multi_info,'g');
-    plot(freqs,sdecomp_Phi_G,'k:','linewidth',2)
-    legend({'GC x_2 to x_1','GC x_1 to x_2','multi. info.','Phi G'},'fontsize',20,'linewidth',2)
- 
-else
-    hold on
-    hl=plot(freqs,squeeze(spct_GC(1,2,:)),'r',freqs,squeeze(spct_GC(2,1,:)),'r--');
-    set(hl,'linewidth',4);
-    hl=plot(freqs,squeeze(spct_GC(1,2,:))+squeeze(spct_GC(2,1,:)),'b-.');
-    set(hl,'linewidth',2);
-    plot(freqs,sdecomp_multi_info,'g');
-    plot(freqs,sdecomp_Phi_G,'k:','linewidth',2)
-    legend({'GC x_2 to x_1','GC x_1 to x_2','sum of GCs','multi. info.','Phi G'},'fontsize',20,'linewidth',2)
-%     plot(freqs,squeeze(real(H(2,1,:))));
+hold on
+hl=plot(freqs,squeeze(spct_GC(1,2,:)),'r',freqs,squeeze(spct_GC(2,1,:)),'r--');
+set(hl,'linewidth',4);
+hl=plot(freqs,squeeze(spct_GC(1,2,:))+squeeze(spct_GC(2,1,:)),'b-.');
+set(hl,'linewidth',2);
+plot(freqs,sdecomp_multi_info,'g');
+plot(freqs,sdecomp_Phi_G,'k:','linewidth',2)
+legend({'GC x_2 to x_1','GC x_1 to x_2','sum of GCs','multi. info.','Phi G'},'fontsize',20,'linewidth',2)
 
-end
 
 xlabel('Frequency')
 set(gca,'fontsize',20)
 set(gca,'xticklabel',[])
 
 %% save
-svFldr = ['/Users/dror/Google Drive/Sasai/FIGURES/Simulations/' systems(systemIndx).nm];
+svFldr = ['/Users/dror/Google Drive/Sasai/FIGURES/Simulations/' systems(system_indx).nm];
 saveFigAs(svFldr,0,'halfScreen')
 
 
@@ -246,6 +232,13 @@ clf
 set(0,'DefaultAxesFontSize',20)
 set(0,'DefaultLineLinewidth',2)
 % set(0,'DefaultAxesXlim','tight')
+sys_y_lims = [];
+sys_y_lims(3,1,:) = [-4 4];
+sys_y_lims(3,2,:) = [-0.8 0.8];
+sys_y_lims(4,1,:) = [-5 5];
+sys_y_lims(4,2,:) = [-1.1 1.1 ];
+sys_y_lims(5,1,:) = [-5 5];
+sys_y_lims(5,2,:) = [-1.1 1.1 ];
 
 j=1;
 ax(j) = subplot(2,3,j); j = j+1;
@@ -255,7 +248,7 @@ plot(freqs,eigvals_S(:,1),...
     freqs,eigvals_S_r(:,1),'b',...
     freqs,eigvals_multiinfo(:,1),'g');
 
-ylim([-5 5])
+ylim(sys_y_lims(system_indx,1,:))
 title('log(Eig 1)')
 
 ax(j) = subplot(2,3,j); j = j+1;
@@ -264,7 +257,7 @@ plot(freqs,eigvals_S(:,2),...
     freqs,eigvals_S_r(:,2),'b',...
     freqs,eigvals_multiinfo(:,2),'g');
 
-ylim([-5 5])
+ylim(sys_y_lims(system_indx,1,:))
 title('log(Eig 2)')
 
 ax(j) = subplot(2,3,j); j = j+1;
@@ -273,7 +266,7 @@ plot(freqs,sum(eigvals_S,2),...
     freqs,sum(eigvals_S_r,2),'b',...
     freqs,sum(eigvals_multiinfo,2),'g');
 
-ylim([-5 5])
+ylim(sys_y_lims(system_indx,1,:))
 title('log(Eig 1) + log(Eig 1)')
 
 % diff
@@ -285,7 +278,7 @@ plot(freqs,eigvals_S_r_GC_norm(:,1),'r',...
 
 title('\Deltalog(Eig 1)')
 xlabel('Frequency');
-ylim([-1 1])
+ylim(sys_y_lims(system_indx,2,:))
 
 
 ax(j) = subplot(2,3,j); j = j+1;
@@ -295,8 +288,7 @@ plot(freqs,eigvals_S_r_GC_norm(:,2),'r',...
 
 title('\Deltalog(Eig 2)')
 xlabel('Frequency');
-ylim([-1 1])
-
+ylim(sys_y_lims(system_indx,2,:))
 
 
 ax(j) = subplot(2,3,j); j = j+1;
@@ -306,21 +298,20 @@ plot(freqs,sum(eigvals_S_r_GC_norm,2),'r',...
 
 title('\Deltalog(Eig 1)+\Deltalog(Eig 2)')
 xlabel('Frequency');
-ylim([-1 1])
-
+ylim(sys_y_lims(system_indx,2,:))
   
-suptitle(reduced_S_nms{reduced_S_indx});
+% suptitle(reduced_S_nms{reduced_S_indx});
 
 set(ax,'xlim',[0 500],'xticklabel',[])
 
-    % ,freqs,eigvals_S_norm(:,2))
-    % plot(freqs,log(eigvals_S_r(:,1)),freqs,log(eigvals_S_r(:,2)),freqs,sum(log(eigvals_S_r),2),freqs,log(det_S'))
-    
+% ,freqs,eigvals_S_norm(:,2))
+% plot(freqs,log(eigvals_S_r(:,1)),freqs,log(eigvals_S_r(:,2)),freqs,sum(log(eigvals_S_r),2),freqs,log(det_S'))
+
 %     set(ax,'Nextplot','add')
 %     hold(ax,'on')
-    % save
-    svFldr = ['/Users/dror/Google Drive/Sasai/FIGURES/Simulations/' systems(systemIndx).nm '_Eigdecomp_' reduced_S_nms{reduced_S_indx}];
-    saveFigAs(svFldr,0,'halfScreen')
+% save
+svFldr = ['/Users/dror/Google Drive/Sasai/FIGURES/Simulations/' systems(system_indx).nm '_Eigdecomp']; % reduced_S_nms{reduced_S_indx}
+saveFigAs(svFldr,0,'halfScreen')
 
     
 
