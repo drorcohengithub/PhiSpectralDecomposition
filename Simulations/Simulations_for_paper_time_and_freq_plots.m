@@ -44,12 +44,14 @@ max_order=size(Cov_XY,3);
 N = size(G,1);
 split_mask= eye(N);
 
+split_mask = ones(N);
+split_mask(2,1) = 0;
 %% Get the parameters of the reduced model (denoted with subscript r)
 % Both time and frequency domain quantities are estimated
-iter_max = 6000;
+iter_max = 12000;
 gamma = 0.01;
-min_error = 1e-6;
-[S_r,det_S_r,trace_S_r,prod_diag_S_r,A_r,SIG_r,masked_Delta] = get_reduced_S_from_autoCov(G,split_mask,max_order,freq_res,iter_max,gamma,min_error);
+min_error = 1e-10;
+[S_r,det_S_r,trace_S_r,prod_diag_S_r,A_r,SIG_r2,masked_Delta] = get_reduced_S_from_autoCov(G,split_mask,max_order,freq_res,iter_max,gamma,min_error);
 
 %% Finally, from the defintion of Phi G
 Phi_G = log (det(SIG_r) / det (SIG_f));

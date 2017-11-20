@@ -9,6 +9,7 @@ systems = [];
 %% system 1 - disconnected only inst
 SIG_f = [1 0.1; 0.1 0.7];
 
+
 % coeff
 A = zeros(N,N,K);
 A(:,:,1) = [0.9 0;
@@ -24,6 +25,8 @@ systems(1).nm='disconnected_with_inst';
 
 %% system 2 - uni directional no inst
 SIG_f = [1 0; 0 0.7];
+
+
 % coeff
 A = zeros(N,N,K);
 A(:,:,1) = [0.9 0;
@@ -40,6 +43,9 @@ systems(2).nm='unidir_no_inst';
 
 %% system 3 - unidir with inst
 SIG_f = [1 0.1; 0.1 0.7];
+normalizer = sqrt(det(SIG_f))
+SIG_f = SIG_f/normalizer
+
 
 % coeff
 A = zeros(N,N,K);

@@ -13,12 +13,12 @@ assert(isa(min_error, 'double'))
 
 % the maximal size of Cov_X is 50by50
 assert(all(size(Cov_X) <= [50 50]));
-% the maximal size of Cov_XY is 50by50by1000
-assert(all(size(Cov_XY) <= [50 50 1000]));
+% the maximal size of Cov_XY is 50by50by3000
+assert(all(size(Cov_XY) <= [50 50 3000]));
 % the maximal size of mask is 50by50
 assert(all(size(mask) <= [50 50]));
-% the maximal size of mask is 50by50by1000
-assert(all(size(initial_A) <= [50 50 1000]));
+% the maximal size of mask is 50by50by3000
+assert(all(size(initial_A) <= [50 50 3000]));
 
 % these are all scalars
 assert(all(size(iter_max) == [1 1]));
