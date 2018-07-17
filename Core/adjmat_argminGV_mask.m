@@ -1,11 +1,12 @@
-function [Cov_E_p, A_p, masked_Delta] = adjmat_argminGV_mask(Cov_X,Cov_XY,K,mask,initial_A,iter_max,gamma,min_error)
+function [Cov_E_p, A_p, masked_Delta] = adjmat_argminGV_mask(Cov_X,Cov_XY,K,split_mask_A,split_mask_E,initial_A,iter_max,gamma,min_error)
  
 %some things for the mex file
 %The classes of the variables 
 assert(isa(Cov_X, 'double'))
 assert(isa(Cov_XY, 'double'))
 assert(isa(K, 'double'))
-assert(isa(mask, 'double'))
+assert(isa(split_mask_A, 'double'))
+assert(isa(split_mask_E, 'double'))
 assert(isa(initial_A, 'double'))
 assert(isa(iter_max, 'double'))
 assert(isa(gamma, 'double'))
@@ -16,8 +17,10 @@ assert(all(size(Cov_X) <= [50 50]));
 % the maximal size of Cov_XY is 50by50by3000
 assert(all(size(Cov_XY) <= [50 50 3000]));
 % the maximal size of mask is 50by50
-assert(all(size(mask) <= [50 50]));
-% the maximal size of mask is 50by50by3000
+assert(all(size(split_mask_A) <= [50 50]));
+% the maximal size of mask is 50by50
+assert(all(size(split_mask_E) <= [50 50]));
+% the maximal size of A is 50by50by3000
 assert(all(size(initial_A) <= [50 50 3000]));
 
 % these are all scalars
@@ -75,6 +78,7 @@ for iter=1: iter_max
     end
     
    Cov_E_p =  Cov_X - Cov_XY_B*A_B' - A_B*Cov_XY_B' + A_B*Cov_B*A_B'; % covariance matrix of residuals in disconnected model
+   Cov_E_p = split_mask_E.*Cov_E_p;
     
    Delta = zeros(N,N,K); % derivative of determinant of Cov_E_p with respect to the diagonal elements of A_p
     for k=1: K
@@ -92,7 +96,7 @@ for iter=1: iter_max
     end
     
     % update A_p
-    big_mask = repmat(mask,1,1,K);
+    big_mask = repmat(split_mask_A,1,1,K);
     masked_Delta = big_mask.*Delta;
     A_p_tmp = A_p - gamma*masked_Delta;
     A_p = A_p_tmp;

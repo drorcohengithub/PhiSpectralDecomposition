@@ -1,4 +1,4 @@
-function [S_r,det_S_r,trace_S_r,prod_diag_S_r,A_r,SIG_r,masked_Delta] = get_reduced_S_from_autoCov(G,split_mask,K,fres,iter_max,gamma,min_error)
+function [S_r,det_S_r,trace_S_r,prod_diag_S_r,A_r,SIG_r,masked_Delta] = get_reduced_S_from_autoCov(G,split_mask_A,split_mask_E,K,fres,iter_max,gamma,min_error)
 
 Cov_X = G(:,:,1);
 Cov_XY = G(:,:,2:end);
@@ -24,7 +24,14 @@ if nargin<=6
 end
 
 % run the optimization
-[SIG_r,A_r,masked_Delta] = adjmat_argminGV_mask_mex(Cov_X,Cov_XY,K,split_mask,A_initial,iter_max,gamma,min_error);
+% try mex
+if exist('adjmat_argminGV_mask_mex','file')
+    [SIG_r,A_r,masked_Delta] = adjmat_argminGV_mask_mex(Cov_X,Cov_XY,K,split_mask_A,split_mask_E,A_initial,iter_max,gamma,min_error);
+else
+    % look for matfile
+    disp('mex file not available. To generate mex file see "Generate_mex_code.m". For now running slower .m script instead')
+    [SIG_r,A_r,masked_Delta] = adjmat_argminGV_mask(Cov_X,Cov_XY,K,split_mask_A,split_mask_E,A_initial,iter_max,gamma,min_error);
+end
 
 %%% phi_VAR estimation in frequency domain
 [S_r,~] = var_to_cpsd(A_r,SIG_r,fres);
