@@ -1,4 +1,4 @@
-function [ratio_S ratio] = ratio_of_dets(S, S_r, SIG, SIG_r)
+function [ratio_S ratio det_S] = ratio_of_dets(S, S_r, SIG, SIG_r)
 
 % logdet(S)
 det_S_r = zeros(size(S_r,3),1);

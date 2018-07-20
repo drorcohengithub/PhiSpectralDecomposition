@@ -34,7 +34,15 @@ if nargin<=6
 end
 
 % run the optimization
-[SIG_r,A_r,masked_Delta] = adjmat_argminGV_mask_mex(Cov_X,Cov_XY,K,split_mask,A_initial,iter_max,gamma,min_error);
+% look for mex file
+if exist('adjmat_argminGV_mask_mex','file')
+    [SIG_r,A_r,masked_Delta] = adjmat_argminGV_mask_mex(Cov_X,Cov_XY,K,split_mask,A_initial,iter_max,gamma,min_error);
+else
+    % look for matfile
+    disp('mex file not available. To generate mex file see "Generate_mex_code.m". For now running slower .m script instead')
+    [SIG_r,A_r,masked_Delta] = adjmat_argminGV_mask(Cov_X,Cov_XY,K,split_mask,A_initial,iter_max,gamma,min_error);
+end
+
 
 det_SIG_r = det(SIG_r);
 %%% phi_VAR estimation in frequency domain

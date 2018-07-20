@@ -69,12 +69,12 @@ end
 Cov_E_p =  nan; 
 masked_Delta = nan;
 %
-         
+Delta2=zeros(1,iter_max);        
 fprintf('Optimzing...\n');  
 for iter=1: iter_max
 
     if mod(iter,500)==0
-        fprintf('Iteration number: %d\n', int32(iter));
+        fprintf('Iteration number: %d, Delta: %d \n', int32(iter),Delta2(iter-1));
     end
     
    Cov_E_p =  Cov_X - Cov_XY_B*A_B' - A_B*Cov_XY_B' + A_B*Cov_B*A_B'; % covariance matrix of residuals in disconnected model
@@ -123,14 +123,22 @@ for iter=1: iter_max
 %             end
 %         end
 %     end
-Delta2 = sum(masked_Delta(:).^2);
-Delta2 = sqrt(Delta2);
+    %Dynamically adjust 
+    Delta2(iter) = sqrt(sum(masked_Delta(:).^2));
+    if mod(iter,500)==0
+        if any(Delta2(iter-100:iter-1)<=Delta2(iter))
+%             keyboard()
+            gamma = gamma/5;
+            disp(['Chaging gamma to: ' num2str(gamma)]);
+        end
+    end
+% Delta2 = sqrt(Delta2)
 % disp(iter);
     
 %     fprintf('iter=%d logdet(Cov_E_p)=%f A_p(1,1)=%f A_p(2,2)=%f\n',iter,logdet(Cov_E_p),A_p(1,1),A_p(2,2));
 %     fprintf('Delta2=%f Delta(1,1)=%f Delta(2,2)=%f\n',Delta2,Delta(1,1),Delta(2,2));
     
-    if Delta2 < min_error
+    if Delta2(iter) < min_error
        fprintf('Convergence reached at iter=%d\n', int32(iter));
 
 %         Disp(['Convergence reached at iter ' num2str(iter)])
