@@ -18,7 +18,9 @@ ratio_S = log(det_S_r./det_S);
 
 %check spectal identity
 diff = abs(ratio - mean([ratio_S;ratio_S(2:end-1)]));
-if  diff > 1e-14
-    warning(['spectral - time equivalence may be violated. Diff is: ' num2str(diff)])  
+if  diff > 1e-10
+    warning(['Diff between time domain and integral over frequencies of spectral decomposition is: ' num2str(diff)])  
+else
+    disp(['Diff between time domain and integral over frequencies of spectral decomposition is: ' num2str(diff)])  
 end
 
