@@ -92,8 +92,8 @@ set(gca,'fontsize',20)
 set(gca,'xticklabel',[])
 
 %% save
-svFldr = ['/Users/dror/Google Drive/Sasai/FIGURES/Simulations/' systems(system_indx).nm];
-saveFigAs(svFldr,0,'halfScreen')
+% svFldr = ['/Users/dror/Google Drive/Sasai/FIGURES/Simulations/' systems(system_indx).nm];
+% saveFigAs(svFldr,0,'halfScreen')
 
 
 
