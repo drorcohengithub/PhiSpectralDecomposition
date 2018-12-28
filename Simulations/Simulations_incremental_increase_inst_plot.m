@@ -217,11 +217,118 @@ for inst_inc_level = 1:length(incremental_inst_increase_results)
      
 end
 
+%increase size, looks better
+set(gcf,'position',[1 82 1280 1263])
 
 savefig(['./' fl_desc '_spct_grad_all.fig'])
 saveas(gcf, ['./' fl_desc '_spct_grad_all.svg'],'svg')
 
-%% highest level of inst gc and phi
+
+%% now plot only highest level
+clf
+j=1;
+subplot(2,4,j);
+
+quant_names = {'sdecomp_phi','sdecomp_GC_x1_to_x2'};
+colors = 'br';
+
+inst_inc_level = length(incremental_inst_increase_results);
+    
+this_results = incremental_inst_increase_results(inst_inc_level).results;
+freqs = this_results.freqs;
+for quant_indx = 1:length(quant_names)
+    quant_indx
+%     subplot(length(quant_names),1,quant_indx)
+%     title(quant_names{quant_indx})
+    hold on
+    vals = squeeze(real(this_results.(quant_names{quant_indx})));
+    if size(vals,2) == 1 && size(vals,1) == 1
+        vals = ones(1,length(freqs)) * vals;
+    end
+    hl = plot(freqs,vals,colors(quant_indx),'linewidth', 3/(length(incremental_inst_increase_results)+1-inst_inc_level));
+    %      hl_GC = plot(freqs,incremental_inst_increase_results(level_indx).spct_GC_x1_to_x2,'k-.');
+    
+    %          if level_indx == 1 || level_indx == length(incremental_inst_increase_results)
+    %             set(hl,'linewidth',3)
+    %          end
+end
+
+
+
+
+%% plot diff
+j = j + 4;
+subplot(2,4,j);
+
+this_results = incremental_inst_increase_results(end).results;
+
+vals = squeeze(real(this_results.sdecomp_phi - this_results.sdecomp_GC_x1_to_x2));
+
+if size(vals,2) == 1 && size(vals,1) == 1
+   vals = ones(1,length(freqs)) * vals;
+end
+hl = plot(freqs,vals,'k','linewidth', 3/(length(incremental_inst_increase_results)+1-inst_inc_level));
+
+%% now the componenets
+freq_res = 100;
+GC_x1_to_x2_model_H_r =  var2trfun(this_results.GC_x2_to_x1_model.A_r,freq_res); %arg, defined the other way in the scrpit
+GC_x1_to_x2_model_H_r_11 = log( squeeze( GC_x1_to_x2_model_H_r(1,1,:) .* conj(GC_x1_to_x2_model_H_r(1,1,:))) );
+GC_x1_to_x2_model_H_r_22 = log( squeeze( GC_x1_to_x2_model_H_r(2,2,:) .* conj(GC_x1_to_x2_model_H_r(2,2,:))) );
+% 
+% clf
+% plot(GC_x1_to_x2_model_H_r_11)
+% hold on
+% plot(GC_x1_to_x2_model_H_r_22)
+
+phi_model_H_r =  var2trfun(this_results.Phi_model.A_r,freq_res);
+phi_model_H_r_11 = log( squeeze( phi_model_H_r(1,1,:) .* conj(phi_model_H_r(1,1,:))) );
+phi_model_H_r_22 = log( squeeze( phi_model_H_r(2,2,:) .* conj(phi_model_H_r(2,2,:))) );
+
+%%
+
+
+ylims = [-1.4 1.1]
+subplot(2,4,2);
+plot(freqs,GC_x1_to_x2_model_H_r_11 ,'r', 'linewidth',3);
+hold on 
+plot(freqs,phi_model_H_r_11 ,'b', 'linewidth',3);
+ylim(ylims)
+
+subplot(2,4,3);
+plot(freqs,GC_x1_to_x2_model_H_r_22,'r', 'linewidth',3);
+hold on 
+plot(freqs,phi_model_H_r_22 ,'b', 'linewidth',3);
+ylim(ylims)
+
+subplot(2,4,4);
+plot(freqs,ones(1,length(freqs))*log(det(this_results.GC_x1_to_x2_model.SIG_r)) ,'r', 'linewidth',3);
+hold on 
+plot(freqs,ones(1,length(freqs))*log(det(this_results.Phi_model.SIG_r)) ,'b', 'linewidth',3);
+ylim(ylims)
+
+%% diffs
+
+subplot(2,4,6);
+plot(freqs,phi_model_H_r_11 - GC_x1_to_x2_model_H_r_11 ,'k', 'linewidth',3);
+
+subplot(2,4,7);
+plot(freqs,phi_model_H_r_22 - GC_x1_to_x2_model_H_r_22,'k', 'linewidth',3);
+
+
+subplot(2,4,8);
+plot(freqs,ones(1,length(freqs))*(log(det(this_results.Phi_model.SIG_r)) - log(det(this_results.GC_x1_to_x2_model.SIG_r))) ,'k', 'linewidth',3);
+
+
+%%
+
+%increase size, looks better
+set(gcf,'position',[1 750 2560 595])
+
+savefig(['./' fl_desc '_spct_phi_and_gc_only_eiglike_decomp.fig'])
+saveas(gcf, ['./' fl_desc '_spct_phi_and_gc_only_eiglike_decomp.svg'],'svg')
+
+
+%% examine the highest level of inst gc and phi
 
 
 %% break down to structure of h
