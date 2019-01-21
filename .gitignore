@@ -4,3 +4,4 @@
 core/mex_stuff/*
 *.m~
 .DS_Store
+Simulations/b04*/*
