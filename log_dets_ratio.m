@@ -1,11 +1,7 @@
 function [ ratio ] = log_dets_ratio(numerator,denominator)
 
-numfreqs = size(numerator,3);
-ratio = zeros(1,numfreqs);
+log_det_numerator = log_dets(numerator);
+log_det_denominator = log_dets(denominator);
 
-for freq = 1:numfreqs
-    
-    ratio(freq) = log( det(squeeze(numerator(:,:,freq))) / det(squeeze(denominator(:,:,freq))) );
-    
-end
+ratio = log_det_numerator ./ log_det_denominator;
 
