@@ -5,7 +5,7 @@ close all
 systems = Example_systems();
 
 %% choose system you want to investigate
-system_indx = 1;
+system_indx = 2;
 system_nm = systems(system_indx).nm;
 
 %% load
@@ -69,7 +69,7 @@ ylim([0 maxy]);
 %% with pred info
 
 
-subplot(2,1,2);
+h1 = subplot(2,1,2);
 
 spect_data = real([sdecomp_stoch_int sdecomp_pred_info sdecomp_Phi_G sdecomp_GC_x1_to_x2 sdecomp_GC_x2_to_x1 sdecomp_inst_int])';   
 
@@ -82,6 +82,7 @@ end
 %%
 legend({'stochint','predinfo','phig','GC1to2','GC2to1','instinfo'}, 'fontsize',20)
 
+savefig(['./' system_nm '_rawlimits_withpredinfo'])
 saveas(gcf, ['./' system_nm '_rawlimits_withpredinfo'],'svg')
 
 cf = gcf();
@@ -90,10 +91,12 @@ set(cf,'Position', [1281 87 1280 1258])
 %%
 ylim([0 max(real(sdecomp_stoch_int))*1.05])
 
+savefig(['./' system_nm '_withpredinfo'])
 saveas(gcf, ['./' system_nm '_withpredinfo'],'svg')
 
 %% without pred info
-clf
+% clf
+cla(h1) 
 subplot(2,1,2);
 
 spect_data = real([sdecomp_stoch_int sdecomp_Phi_G sdecomp_GC_x1_to_x2 sdecomp_GC_x2_to_x1 sdecomp_inst_int])';   
@@ -107,6 +110,7 @@ end
 %%
 legend({'stochint','phig','GC1to2','GC2to1','instinfo'}, 'fontsize',20)
 
+save(['./' system_nm '_rawlimits_withoutpredinf'])
 saveas(gcf, ['./' system_nm '_rawlimits_withoutpredinf'],'svg')
 
 cf = gcf();
@@ -115,4 +119,5 @@ set(cf,'Position', [1281 87 1280 1258])
 %%
 ylim([0 max(real(sdecomp_stoch_int))*1.05])
 
+savefig( ['./' system_nm '_withoutpredinfo'])
 saveas(gcf, ['./' system_nm '_withoutpredinfo'],'svg')

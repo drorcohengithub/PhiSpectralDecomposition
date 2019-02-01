@@ -5,7 +5,7 @@ close all
 systems = Example_systems();
 
 %% choose system you want to investigate
-system_indx =  4;
+system_indx =  2;
 A = systems(system_indx).A;
 SIG = systems(system_indx).SIG; 
 
