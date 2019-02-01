@@ -129,7 +129,7 @@ for iter=1: iter_max
         if any(Delta2(iter-100:iter-1)<=Delta2(iter))
 %             keyboard()
             gamma = gamma/5;
-            disp(['Chaging gamma to: ' num2str(gamma)]);
+            disp(['Changing gamma to: ' num2str(gamma)]);
         end
     end
 % Delta2 = sqrt(Delta2)

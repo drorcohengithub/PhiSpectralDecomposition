@@ -2,7 +2,7 @@ function [ results ] = calc_measures(A,SIG,measure_names,check,freq_res,samp_rat
 
 
 %Calculate the various measures from the paper
-
+% Only for bivariate systems
 % A - connectivity matrix of full system
 % Sig - covariance of residuals of full system
 % measure_names - the names of the measures you want to calc; 'phi','gc',
@@ -10,7 +10,8 @@ function [ results ] = calc_measures(A,SIG,measure_names,check,freq_res,samp_rat
 % check - boolean, whether or not to check if the various ways of calculating the quantities are identical. Takes longer
 % freq_res - frequency resolution, default 100Hz
 % samp_rate- sampling rate, default 1000Hz 
-%% only for phi below
+
+%% only for phi params
 % iter_max - maximum iteration number for finding A_p, default 12000
 % gamma - initial step size for optimization 
 % min_error - error thresh at which to stop optimizing 
@@ -49,7 +50,7 @@ end
 
 if nargin <= 9 || isempty(min_error)
     
-    min_error = 1e-10;
+    min_error = 1e-14;
     
 end
 
@@ -190,6 +191,17 @@ for measure_indx = 1 : length (measure_names)
             results.univar_autocov2=X(2,2,:);
             [results.univar_A2 results.univar_SIG2] = autocov_to_var(results.univar_autocov2);
             results.stoch_int = log ( results.univar_SIG1*results.univar_SIG2  / det (results.SIG) );
+            
+            A_r = [];
+            A_r(1,1,:) = results.univar_A1;
+            A_r(2,2,:) = results.univar_A2;
+            
+            results.A_r = A_r;
+            
+            SIG_r = [];
+            SIG_r = [results.univar_SIG1,0;0,results.univar_SIG2];
+            
+            results.SIG_r = SIG_r;
 
                 [t_GC_mvgc]= autocov_to_pwcgc(X);
             results.GC_x1_to_x2 = t_GC_mvgc(2,1);
@@ -199,7 +211,15 @@ for measure_indx = 1 : length (measure_names)
             results.sdecomp_GC_x1_to_x2 = squeeze(spct_GC(2,1,:));
             results.sdecomp_GC_x2_to_x1 = squeeze(spct_GC(1,2,:));
             
-                                                          
+            S_r = S;
+            S_r(1,2,:) = S_r(1,2,:)*0;
+            S_r(2,1,:) = S_r(2,1,:)*0;
+            
+            
+           results.stoch_int_model.S_r = S_r;
+           results.stoch_int_model.log_det_S_r = log_of_dets(S_r);
+            
+                                                         
             
         case 'inst_int'
             
