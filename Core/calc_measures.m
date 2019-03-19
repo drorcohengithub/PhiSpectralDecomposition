@@ -120,19 +120,21 @@ for measure_indx = 1 : length (measure_names)
                 split_mask_A,split_mask_E,max_order,freq_res,iter_max,gamma,min_error);    
 
              %log ratio
-            [sdecomp_phi results.phi results.det_S] = ratio_of_dets(S, results.Phi_model.S_r, results.SIG, results.Phi_model.SIG_r);
+            [sdecomp_phi tmp results.det_S] = ratio_of_dets(S, results.Phi_model.S_r, results.SIG, results.Phi_model.SIG_r);
+            results.phi =1/2 * tmp;
             % may not be quite real
-            results.sdecomp_phi = real(sdecomp_phi);
+            results.sdecomp_phi = 1/2 * real(sdecomp_phi);
         
         case 'gc'
             
             [t_GC_mvgc]= autocov_to_pwcgc(X);
-            results.GC_x1_to_x2 = t_GC_mvgc(2,1);
-            results.GC_x2_to_x1 = t_GC_mvgc(1,2);
+            %note factor of half
+            results.GC_x1_to_x2 = 1/2 *t_GC_mvgc(2,1);
+            results.GC_x2_to_x1 = 1/2 *t_GC_mvgc(1,2);
 
             [spct_GC]= autocov_to_spwcgc(X,freq_res);
-            results.sdecomp_GC_x1_to_x2 = squeeze(spct_GC(2,1,:));
-            results.sdecomp_GC_x2_to_x1 = squeeze(spct_GC(1,2,:));
+            results.sdecomp_GC_x1_to_x2 =1/2 * squeeze(spct_GC(2,1,:));
+            results.sdecomp_GC_x2_to_x1 = 1/2 *squeeze(spct_GC(1,2,:));
             
             
             
@@ -184,13 +186,13 @@ for measure_indx = 1 : length (measure_names)
             
              % stoch int
             C=squeeze((abs(S(1,2,:)).^2)./(S(1,1,:).*S(2,2,:)));
-            results.sdecomp_stoch_int = -log(1-C);
+            results.sdecomp_stoch_int = 1/2 * -log(1-C);
 
             results.univar_autocov1=X(1,1,:);
             [results.univar_A1 results.univar_SIG1] = autocov_to_var(results.univar_autocov1);
             results.univar_autocov2=X(2,2,:);
             [results.univar_A2 results.univar_SIG2] = autocov_to_var(results.univar_autocov2);
-            results.stoch_int = log ( results.univar_SIG1*results.univar_SIG2  / det (results.SIG) );
+            results.stoch_int = 1/2 * log ( results.univar_SIG1*results.univar_SIG2  / det (results.SIG) );
             
             A_r = [];
             A_r(1,1,:) = results.univar_A1;
@@ -204,12 +206,12 @@ for measure_indx = 1 : length (measure_names)
             results.SIG_r = SIG_r;
 
                 [t_GC_mvgc]= autocov_to_pwcgc(X);
-            results.GC_x1_to_x2 = t_GC_mvgc(2,1);
-            results.GC_x2_to_x1 = t_GC_mvgc(1,2);
+            results.GC_x1_to_x2 = 1/2 * t_GC_mvgc(2,1);
+            results.GC_x2_to_x1 = 1/2 * t_GC_mvgc(1,2);
 
             [spct_GC]= autocov_to_spwcgc(X,freq_res);
-            results.sdecomp_GC_x1_to_x2 = squeeze(spct_GC(2,1,:));
-            results.sdecomp_GC_x2_to_x1 = squeeze(spct_GC(1,2,:));
+            results.sdecomp_GC_x1_to_x2 = 1/2 * squeeze(spct_GC(2,1,:));
+            results.sdecomp_GC_x2_to_x1 = 1/2 * squeeze(spct_GC(1,2,:));
             
             S_r = S;
             S_r(1,2,:) = S_r(1,2,:)*0;
@@ -224,7 +226,7 @@ for measure_indx = 1 : length (measure_names)
         case 'inst_int'
             
            %inst
-            results.inst_int = log(SIG(1,1).*SIG(2,2)/det(SIG));
+            results.inst_int = 1/2 *log(SIG(1,1).*SIG(2,2)/det(SIG));
             results.sdecomp_inst_int = ones(length(freqs),1) * results.inst_int;
             
 %             [results.Phi_model.S_r,results.Phi_model.det_S_r,results.Phi_model.trace_S_r,...
@@ -239,8 +241,8 @@ for measure_indx = 1 : length (measure_names)
                 results.det_S(freqIndx)=det(squeeze(S(:,:,freqIndx)));
             end
             
-            results.sdecomp_pred_info=log( det(Cov_X)./real(results.det_S) )';
-            results.pred_info=log( det(Cov_X)/det(SIG) );
+            results.sdecomp_pred_info=1/2 *log( det(Cov_X)./real(results.det_S) )';
+            results.pred_info=1/2 *log( det(Cov_X)/det(SIG) );
             
 %             [results.Phi_model.S_r,results.Phi_model.det_S_r,results.Phi_model.trace_S_r,...
 %                 results.Phi_model.prod_diag_S_r,results.Phi_model.A_r,results.Phi_model.SIG_r,...
