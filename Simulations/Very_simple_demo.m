@@ -90,9 +90,10 @@ masked_Delta]... % errors during optimization covariace of the residuals of the 
     split_mask_A,split_mask_SIG,max_order,freq_res,iter_max,gamma,min_error);    
 
 %% log ratio
-[sdecomp_Phi_G Phi_G det_S] = ratio_of_dets(S, S_r, SIG, SIG_r);
+[sdecomp_ratio time_domain_ratio det_S] = ratio_of_dets(S, S_r, SIG, SIG_r);
 
-sdecomp_Phi_G = real(sdecomp_Phi_G);%may have tiny imaginery vals
+sdecomp_Phi_G = 1/2 *real(sdecomp_ratio);% note factor of half may have tiny imaginery vals
+Phi_G = 1/2 *time_domain_ratio;
 
 clf
 % may not be quite real
