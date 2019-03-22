@@ -111,7 +111,7 @@ for system_indx = 1:length(systems)
     %%
     legend({'stochint','phig','GC1to2','GC2to1','instinfo'}, 'fontsize',20)
 
-    save(['./' system_nm '_rawlimits_withoutpredinf'])
+    savefig(['./' system_nm '_rawlimits_withoutpredinf'])
     saveas(gcf, ['./' system_nm '_rawlimits_withoutpredinf'],'svg')
 
     cf = gcf();
