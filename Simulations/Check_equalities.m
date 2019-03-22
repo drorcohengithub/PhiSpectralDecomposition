@@ -1,25 +1,27 @@
 clear all
 close all
 
+
 %% load systems
 systems = Example_systems();
-
-A = systems(6).A;
-SIG = systems(6).SIG;
-split_mask_A = ones(size(SIG));
-split_mask_A(3:5,1:2)=0;
 % 
-% %For MVGC from y to x
-y = 1:2;
-x = 3:5;
-
-% A = systems(5).A;
-% SIG = systems(5).SIG;
+% A = systems(6).A;
+% SIG = systems(6).SIG;
 % split_mask_A = ones(size(SIG));
-% split_mask_A(2,1)=0; %zero connection from 1 to 2
-% %from y to x
-% y = 1;
-% x = 2;
+% split_mask_A(3:5,1:2)=0;
+% % 
+% % %For MVGC from y to x
+% y = 1:2;
+% x = 3:5;
+
+system_indx = 3;
+A = systems(system_indx).A;
+SIG = systems(system_indx).SIG;
+split_mask_A = ones(size(SIG));
+split_mask_A(2,1)=0; %zero connection from 1 to 2
+%from y to x
+y = 1;
+x = 2;
 
 %% Get all the characteristics of the system
 [X,info] = var_to_autocov(A,SIG); 
@@ -114,6 +116,87 @@ xlabel('Frequency')
 title('dir 2 spectral decomp ')
 xlim([0 length(dir2_s_GC_mvgc) ])
 
+%% spect decomps
+H=var2trfun(A,freq_res);
+A_p=reslts_dir1.A_r;
+A_p = cat(3,eye(2),-A_p);
+H_r=var2trfun(reslts_dir1.A_r,freq_res);
+H_r=var2trfun(reslts_dir1.A_r,freq_res);
+chk = H_r;
+chk1 =chk;
+chk2 = chk;
+chk3 = chk;
+
+P = eye(size(SIG));
+part1=1;
+part2=2;
+
+P(part1,part2) = SIG(part1,part2)*SIG(part2,part2)^-1;
+
+for freq_indx = 1:size(H_r,3)
+          chk(:,:,freq_indx) =  squeeze(H_r(:,:,freq_indx))^(-1) * reslts_dir1.S_r(:,:,freq_indx) * squeeze(H_r(:,:,freq_indx))^(-1)';
+          chk1(:,:,freq_indx) =  squeeze(H_r(:,:,freq_indx))^(-1) * S_f(:,:,freq_indx) * squeeze(H_r(:,:,freq_indx))^(-1)';
+          chk2(:,:,freq_indx) =  (squeeze(H(:,:,freq_indx))^(-1) - squeeze(H_r(:,:,freq_indx))^(-1)) * S_f(:,:,freq_indx) * (squeeze(H(:,:,freq_indx))^(-1) - squeeze(H_r(:,:,freq_indx))^(-1))';
+          chk3(:,:,freq_indx) = squeeze(H(:,:,freq_indx)*P)^(-1) - squeeze(H_r(:,:,freq_indx)*P)^(-1);
+
+end
+
+%%
+A_tmp = reslts_dir1.A_r * 0;
+A_tmp(:,:,1:2) = A;
+A_tmp
+A_diff = A_tmp-reslts_dir1.A_r;
+[Xchk info2] = var_to_autocov(A_diff,SIG-reslts_dir1.SIG_r);
+Xchk
+
+
+%%
+K = size(Cov_XY,3)
+Cov_B = zeros(N*K,N*K);
+for i=1: K
+    for j=i: K
+        if i== j
+            Cov_B((i-1)*N+1:i*N,(j-1)*N+1:j*N) = Cov_X;
+        else
+            Cov_B((i-1)*N+1:i*N,(j-1)*N+1:j*N) = Cov_XY(:,:,(j-i));
+            Cov_B((j-1)*N+1:j*N,(i-1)*N+1:i*N) = Cov_XY(:,:,(j-i))';
+        end
+
+    end
+end
+    
+A_p=reslts_dir1.A_r;
+
+A_B = zeros(N,N*K);
+Cov_XY_B = zeros(N,N*K);
+for j=1: K
+    A_B(:,(j-1)*N+1:j*N) = A_p(:,:,j);
+    Cov_XY_B(:,(j-1)*N+1:j*N) = Cov_XY(:,:,j);
+end
+
+A_r_B = A_B;
+
+A_p=A_diff;
+
+A_B = zeros(N,N*K);
+Cov_XY_B = zeros(N,N*K);
+for j=1: K
+    A_B(:,(j-1)*N+1:j*N) = A_p(:,:,j);
+    Cov_XY_B(:,(j-1)*N+1:j*N) = Cov_XY(:,:,j);
+end
+
+A_diff_B = A_diff;
+
+A_p=A_tmp;
+
+A_B = zeros(N,N*K);
+Cov_XY_B = zeros(N,N*K);
+for j=1: K
+    A_B(:,(j-1)*N+1:j*N) = A_p(:,:,j);
+    Cov_XY_B(:,(j-1)*N+1:j*N) = Cov_XY(:,:,j);
+end
+
+% A_B * Cov_XY_B * A_B'
 
 %% Equivalences between the means and covs of the conditionals of the full and reduced model
 part1=1:2;
@@ -212,7 +295,9 @@ split_mask_E=ones(N);
 
 %% log ratios
 [ratio_S ratio det_S_f] = ratio_of_dets(S_f, S_r, SIG, SIG_r);
-    
+   
+freq_tm_diff = abs(ratio - mean([ratio_S;ratio_S(2:end-1)]));
+
 % keep results here 
 t_pred_info = ratio;
 t_pred_info_spct = ratio_S;
@@ -224,7 +309,8 @@ t_pred_info_spct2=log( det(Cov_X)./real(det_S_f) );
 clf
 subplot(1,2,1)
 bar([t_pred_info t_pred_info2])
-title(['tm domain. Diff between analltic and numerical opt is: ' num2str(t_pred_info-t_pred_info2)])
+title({['tm domain. Diff between analltic and numerical opt is: ' num2str(t_pred_info-t_pred_info2)];...
+    ['diff between tm and mean over freqs:' num2str(freq_tm_diff)]})
 
 subplot(1,2,2)
 ph = plot(freqs,real(t_pred_info_spct),freqs, t_pred_info_spct2,'--r'); 
