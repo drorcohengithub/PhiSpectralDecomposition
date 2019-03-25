@@ -4,24 +4,29 @@ close all
 
 %% load systems
 systems = Example_systems();
-% 
-% A = systems(6).A;
-% SIG = systems(6).SIG;
-% split_mask_A = ones(size(SIG));
-% split_mask_A(3:5,1:2)=0;
-% % 
-% % %For MVGC from y to x
-% y = 1:2;
-% x = 3:5;
 
-system_indx = 3;
-A = systems(system_indx).A;
-SIG = systems(system_indx).SIG;
+%% we can try the bivariate sys in simulations (1-5)
+
+% system_indx = 5;
+% A = systems(system_indx).A;
+% SIG = systems(system_indx).SIG;
+% split_mask_A = ones(size(SIG));
+% split_mask_A(2,1)=0; %zero connection from 1 to 2
+% %from y to x
+% y = 1;
+% x = 2;
+
+%% or we can try a multivariate system across an arbitrary partition (sys #6)
+A = systems(6).A;
+ SIG = systems(6).SIG;
+
+%this defines the constraint on A. Here for GC between elements 1,2 (termed y) and 3-5 (termed x) 
+y = 1:2;
+x = 3:5;
 split_mask_A = ones(size(SIG));
-split_mask_A(2,1)=0; %zero connection from 1 to 2
-%from y to x
-y = 1;
-x = 2;
+split_mask_A(x,y)=0;
+
+
 
 %% Get all the characteristics of the system
 [X,info] = var_to_autocov(A,SIG); 
@@ -54,7 +59,8 @@ max_order=size(Cov_XY,3);
 % For GC we place no retrictions on the noise covariance
 split_mask_E=ones(N);
 
-%% Optimize
+%% Optimize the restricted model, 
+% GC in first dir
 iter_max = 12000;   
 gamma = 0.1;
 min_error = 1e-14;
@@ -63,8 +69,8 @@ min_error = 1e-14;
     reslts_dir1.A_r,reslts_dir1.SIG_r,reslts_dir1.masked_Delta] = ...
     get_reduced_S_from_autoCov(X,split_mask_A,split_mask_E,max_order,freq_res,iter_max,gamma,min_error);    
 
-%other dir
-
+% other dir, just transpose the mask
+ 
 split_mask_A = split_mask_A';
 
 reslts_dir2 = [];
@@ -72,11 +78,12 @@ reslts_dir2 = [];
 [reslts_dir2.S_r,reslts_dir2.det_S_r,reslts_dir2.trace_S_r,reslts_dir2.prod_diag_S_r,...
     reslts_dir2.A_r,reslts_dir2.SIG_r,reslts_dir2.masked_Delta] = ...
     get_reduced_S_from_autoCov(X,split_mask_A,split_mask_E,max_order,freq_res,iter_max,gamma,min_error);    
-%% compe the ratios
+
+%% get the log ratios of the generalized variances and spectrl adensity matrices
 [dir1_ratio_S dir1_ratio] = ratio_of_dets(S_f, reslts_dir1.S_r, SIG, reslts_dir1.SIG_r);  
 [dir2_ratio_S dir2_ratio] = ratio_of_dets(S_f, reslts_dir2.S_r, SIG, reslts_dir2.SIG_r);      
-%% Compare with MVGC - (factor of half)
 
+%% Now, compute the quantities using the MVGC toolbox
 [dir1_t_GC_mvgc]= autocov_to_mvgc(X,x,y);
 [dir2_t_GC_mvgc]= autocov_to_mvgc(X,y,x);
 
@@ -87,7 +94,7 @@ reslts_dir2 = [];
 clf
 subplot(2,2,1)
 bar([dir1_ratio dir1_t_GC_mvgc])
-set(gca,'xticklabel',{'Framework','MVGC'})
+set(gca,'xticklabel',{'Our framework','MVGC'})
 ylim([0 0.02])
 title({'dir1';['diff between measures is ' num2str(dir1_ratio-dir1_t_GC_mvgc)]})
 
@@ -103,7 +110,7 @@ title('dir 1 spectral decomp ')
 subplot(2,2,3)
 title('spectral')
 bar([dir2_ratio dir2_t_GC_mvgc])
-set(gca,'xticklabel',{'Framework','MVGC'})
+set(gca,'xticklabel',{'Our framework','MVGC'})
 title({'dir2';['diff between measures is ' num2str(dir2_ratio-dir2_t_GC_mvgc)]})
 % ylim([0 0.0001])
 
@@ -111,47 +118,59 @@ subplot(2,2,4)
 plot(dir2_s_GC_mvgc)
 hold on
 plot(real(dir2_ratio_S),'r--')
-legend({'MVGC', 'Framework'})
+legend({'MVGC', 'Our framework'})
 xlabel('Frequency')
 title('dir 2 spectral decomp ')
 xlim([0 length(dir2_s_GC_mvgc) ])
 
-%% spect decomps
-H=var2trfun(A,freq_res);
-A_p=reslts_dir1.A_r;
-A_p = cat(3,eye(2),-A_p);
-H_r=var2trfun(reslts_dir1.A_r,freq_res);
-H_r=var2trfun(reslts_dir1.A_r,freq_res);
-chk = H_r;
-chk1 =chk;
-chk2 = chk;
-chk3 = chk;
+%%
+% Below we check a bunch of the equalities in the paper
+%%
+%% Equivalences between the means and covs of the conditionals of the full and reduced model
+part1=y;
+part2=x;
 
-P = eye(size(SIG));
-part1=1;
-part2=2;
+disp('')
+disp('Checking time domain equalities between the full and reduced models')
+disp('Conditional mean of full model:')
+meanCondFull = SIG(part1,part2)*SIG(part2,part2)^-1;
+disp(meanCondFull)
 
-P(part1,part2) = SIG(part1,part2)*SIG(part2,part2)^-1;
+disp('Conditional mean of disconnected model')
+meadnCondPart1 = reslts_dir1.SIG_r(part1,part2)*reslts_dir1.SIG_r(part2,part2)^-1;
+disp(meadnCondPart1)
 
-for freq_indx = 1:size(H_r,3)
-          chk(:,:,freq_indx) =  squeeze(H_r(:,:,freq_indx))^(-1) * reslts_dir1.S_r(:,:,freq_indx) * squeeze(H_r(:,:,freq_indx))^(-1)';
-          chk1(:,:,freq_indx) =  squeeze(H_r(:,:,freq_indx))^(-1) * S_f(:,:,freq_indx) * squeeze(H_r(:,:,freq_indx))^(-1)';
-          chk2(:,:,freq_indx) =  (squeeze(H(:,:,freq_indx))^(-1) - squeeze(H_r(:,:,freq_indx))^(-1)) * S_f(:,:,freq_indx) * (squeeze(H(:,:,freq_indx))^(-1) - squeeze(H_r(:,:,freq_indx))^(-1))';
-          chk3(:,:,freq_indx) = squeeze(H(:,:,freq_indx)*P)^(-1) - squeeze(H_r(:,:,freq_indx)*P)^(-1);
-
-end
+disp('Their difference')
+disp(meanCondFull - meadnCondPart1);
 
 %%
-A_tmp = reslts_dir1.A_r * 0;
-A_tmp(:,:,1:2) = A;
-A_tmp
-A_diff = A_tmp-reslts_dir1.A_r;
-[Xchk info2] = var_to_autocov(A_diff,SIG-reslts_dir1.SIG_r);
-Xchk
+disp('Conditional variance of full model:')
+dir1_full_partcov = SIG(part1,part1) - SIG(part1,part2)*SIG(part2,part2)^-1*SIG(part2,part1);
+disp(dir1_full_partcov)
 
+disp('Conditional variance of disconnected model:')
+dir1_partcov=reslts_dir1.SIG_r(part1,part1) - reslts_dir1.SIG_r(part1,part2)*reslts_dir1.SIG_r(part2,part2)^-1*reslts_dir1.SIG_r(part2,part1);
+disp(dir1_partcov)
 
-%%
-K = size(Cov_XY,3)
+disp('Their diff:')
+disp(dir1_partcov - dir1_full_partcov)
+
+%% other direction
+meanCondFull = SIG(part2,part1)*SIG(part1,part1)^-1;
+meadnCondPart2 = reslts_dir2.SIG_r(part2,part1)*reslts_dir2.SIG_r(part1,part1)^-1;
+disp('')
+disp('Difference betwee cond mean in full model and disconnected model for other direction GC')
+disp(meanCondFull - meadnCondPart2);
+
+dir2_partcov=reslts_dir2.SIG_r(part2,part2) - reslts_dir2.SIG_r(part2,part1)*reslts_dir2.SIG_r(part1,part1)^-1*reslts_dir2.SIG_r(part1,part2);
+dir2_full_partcov = SIG(part2,part2) - SIG(part2,part1)*SIG(part1,part1)^-1*SIG(part1,part2);
+disp('Difference betwee cond Variance in full model and disconnected model for other direction GC')
+disp(dir2_partcov - dir2_full_partcov)
+
+%% Check the relatinoshup between the autoregressive parameters of the full and disconnected model
+% First we will need to create the quantities as per the paper
+% This is the covariance matrix of the system has a Big matrix 
+K = size(Cov_XY,3);
 Cov_B = zeros(N*K,N*K);
 for i=1: K
     for j=i: K
@@ -164,118 +183,151 @@ for i=1: K
 
     end
 end
-    
-A_p=reslts_dir1.A_r;
 
-A_B = zeros(N,N*K);
 Cov_XY_B = zeros(N,N*K);
 for j=1: K
-    A_B(:,(j-1)*N+1:j*N) = A_p(:,:,j);
     Cov_XY_B(:,(j-1)*N+1:j*N) = Cov_XY(:,:,j);
 end
 
-A_r_B = A_B;
+%% Now get the corresponding big matrices for the ar coeffs
+% to make sure the lags match the disconnecte system
+A_tmp = reslts_dir1.A_r * 0;
+A_tmp(:,:,1:2) = A;
 
-A_p=A_diff;
-
-A_B = zeros(N,N*K);
-Cov_XY_B = zeros(N,N*K);
-for j=1: K
-    A_B(:,(j-1)*N+1:j*N) = A_p(:,:,j);
-    Cov_XY_B(:,(j-1)*N+1:j*N) = Cov_XY(:,:,j);
-end
-
-A_diff_B = A_diff;
-
+% get big A for full system
 A_p=A_tmp;
-
-A_B = zeros(N,N*K);
-Cov_XY_B = zeros(N,N*K);
+A_f_B = zeros(N,N*K);
 for j=1: K
-    A_B(:,(j-1)*N+1:j*N) = A_p(:,:,j);
-    Cov_XY_B(:,(j-1)*N+1:j*N) = Cov_XY(:,:,j);
+    A_f_B(:,(j-1)*N+1:j*N) = A_p(:,:,j);
 end
 
-% A_B * Cov_XY_B * A_B'
+% get big A for disc system in dir 1
+A_p=reslts_dir1.A_r;
+A_dir1_B = zeros(N,N*K);
+for j=1: K
+    A_dir1_B(:,(j-1)*N+1:j*N) = A_p(:,:,j);
+end
 
-%% Equivalences between the means and covs of the conditionals of the full and reduced model
-part1=1:2;
-part2=3:5;
+% get big A for disc system in dir 2
+A_p=reslts_dir2.A_r;
+A_dir2_B = zeros(N,N*K);
+for j=1: K
+    A_dir2_B(:,(j-1)*N+1:j*N) = A_p(:,:,j);
+end
 
-disp('Checking time domain equality')
+%% Now, difference between the var in terms of delta A
+delta_A_dir_1 = A_f_B - A_dir1_B;
+sig_diff_1 = delta_A_dir_1 * Cov_B * delta_A_dir_1';
+disp('Diff between the variance in full and disconnected model version 1')
+disp(sig_diff_1)
 
-meanCondFull = SIG(part1,part2)*SIG(part2,part2)^-1;
-meadnCondPart1 = reslts_dir1.SIG_r(part1,part2)*reslts_dir1.SIG_r(part2,part2)^-1;
-disp(meanCondFull - meadnCondPart1);
+disp('Diff between the variance in full and disconnected model version 1')
+sig_diff_2 = reslts_dir1.SIG_r - SIG;
+disp(sig_diff_2)
 
-dir1_partcov=reslts_dir1.SIG_r(part1,part1) - reslts_dir1.SIG_r(part1,part2)*reslts_dir1.SIG_r(part2,part2)^-1*reslts_dir1.SIG_r(part2,part1);
-dir1_full_partcov = SIG(part1,part1) - SIG(part1,part2)*SIG(part2,part2)^-1*SIG(part2,part1);
-disp(dir1_partcov - dir1_full_partcov)
+disp('difference between the two is')
+disp(sig_diff_1-sig_diff_2)
 
-meanCondFull = SIG(part2,part1)*SIG(part1,part1)^-1;
-meadnCondPart2 = reslts_dir2.SIG_r(part2,part1)*reslts_dir2.SIG_r(part1,part1)^-1;
-disp(meanCondFull - meadnCondPart2);
+disp('othe dir')
+delta_A_dir_2 = A_f_B - A_dir2_B;
+sig_diff_1 = delta_A_dir_2 * Cov_B * delta_A_dir_2';
+disp('Diff between the variance in full and disconnected model version 1')
+disp(sig_diff_1)
 
-dir2_partcov=reslts_dir2.SIG_r(part2,part2) - reslts_dir2.SIG_r(part2,part1)*reslts_dir2.SIG_r(part1,part1)^-1*reslts_dir2.SIG_r(part1,part2);
-dir2_full_partcov = SIG(part2,part2) - SIG(part2,part1)*SIG(part1,part1)^-1*SIG(part1,part2);
-disp(dir2_partcov - dir2_full_partcov)
+disp('Diff between the variance in full and disconnected model version 1')
+sig_diff_2 = reslts_dir2.SIG_r - SIG;
+disp(sig_diff_2)
 
-%% numerator 
-H=var2trfun(A,freq_res);
-dir1_Hprime=var2trfun(reslts_dir1.A_r,freq_res);
-dir2_Hprime=var2trfun(reslts_dir2.A_r,freq_res);
+disp('difference between the two is')
+disp(sig_diff_1-sig_diff_2)
+%% Now together with transformation by P
+P_dir_1 = eye(size(SIG));
+P_dir_1(part1,part2) = SIG(part1,part2)*SIG(part2,part2)^-1;
+P_dir_1_I = P_dir_1^-1;
+sig_diff_1=P_dir_1_I*(reslts_dir1.SIG_r - SIG)*P_dir_1_I';
+sig_diff_2 = P_dir_1_I*delta_A_dir_1 * Cov_B * delta_A_dir_1'*P_dir_1_I';
+disp('Difference between two expressions')
+disp(sig_diff_1-sig_diff_2)
 
-%% Check freq domain equivalence
+% confirm these are zero
+tmp=P_dir_1_I*delta_A_dir_1;
+disp('Transformed A is zero:')
+disp(tmp(part1,part1))
 
 
-P = eye(size(SIG));
-P(part1,part2) = SIG(part1,part2)*SIG(part2,part2)^-1;
+%% other dir
+P_dir2 = eye(size(SIG));
+P_dir2(part2,part1) = SIG(part2,part1)*SIG(part1,part1)^-1;
+P_dir2_I = P_dir2^-1;
 
+sig_diff_1 = P_dir2_I*delta_A_dir_2 * Cov_B * delta_A_dir_2'*P_dir2_I';
+sig_diff_2 = P_dir2_I*(reslts_dir2.SIG_r - SIG)*P_dir2_I';
+
+disp('Other dir')
+disp('Difference between two expressions')
+disp(sig_diff_1-sig_diff_2)
+
+tmp=P_dir2_I*delta_A_dir_2;
+disp('Transformed A is zero:')
+disp(tmp(part2,part2))
+
+%% now, frequency domain
+H = var2trfun(A,freq_res);
+H_dir1 = var2trfun(reslts_dir1.A_r,freq_res);
+H_dir2 = var2trfun(reslts_dir2.A_r,freq_res);
+
+chk1 = 0 * H;
+chk2 = 0 * H;
+
+for freq_indx = 1:size(H,3)
+          chk1(:,:,freq_indx) =  squeeze(H(:,:,freq_indx)*P_dir_1)^(-1) - squeeze(H_dir1(:,:,freq_indx)*P_dir_1)^(-1);         
+          chk2(:,:,freq_indx) =  squeeze(H(:,:,freq_indx)*P_dir2)^(-1) - squeeze(H_dir2(:,:,freq_indx)*P_dir2)^(-1);         
+end
+
+tmp = chk1(part1,part1,:);
+disp('Overall magnitute of of dir 1')
+disp(sum(abs(tmp(:))));
+
+tmp = chk2(part2,part2,:);
+disp('Overall magnitute of of dir 2')
+disp(sum(abs(tmp(:))));
+
+%% Finally
 
 H_tilde = 0 * H;
 Hs11_tilde_converted = 0 * H;
+Hs22_tilde_converted = 0 * H;
+
 for freq = 1:size(H,3)
     
-     H_tilde(:,:,freq) = squeeze(H(:,:,freq))*P;
+     H_tilde(:,:,freq) = squeeze(H(:,:,freq))*P_dir_1;
      Hs11_tilde_converted(part1,part1,freq) = H_tilde(part1,part1,freq) -...
           H_tilde(part1,part2,freq) * squeeze(H_tilde(part2,part2,freq))^-1 * H_tilde(part2,part1,freq); 
    
-    
+      H_tilde(:,:,freq) = squeeze(H(:,:,freq))*P_dir2;
+      Hs22_tilde_converted(part2,part2,freq) = H_tilde(part2,part2,freq) -...
+           H_tilde(part2,part1,freq) * squeeze(H_tilde(part1,part1,freq))^-1 * H_tilde(part1,part2,freq); 
+   
 end
 
 %%
-disp('Checking transfer function relation 1')
+disp('Checking transfer function equality')
 
-clf
-diff_chk = Hs11_tilde_converted(part1,part1,:) - dir1_Hprime(part1,part1,:); 
-plot(abs(diff_chk(:)));
-ylim([-0.0001 0.0001])
+diff_chk = Hs11_tilde_converted(part1,part1,:) - H_dir1(part1,part1,:); 
+disp(sum(abs(diff_chk(:))));
 
-%%
-P = eye(size(SIG));
-P(part2,part1) = SIG(part2,part1)*SIG(part1,part1)^-1;
+diff_chk = Hs22_tilde_converted(part2,part2,:) - H_dir2(part2,part2,:); 
+disp(sum(abs(diff_chk(:))));
 
-
-H_tilde = 0 * H;
-Hs22_tilde_converted = 0 * H;
-for freq = 1:size(H,3)
-    
-     H_tilde(:,:,freq) = squeeze(H(:,:,freq))*P;
-     Hs22_tilde_converted(part2,part2,freq) = H_tilde(part2,part2,freq) -...
-          H_tilde(part2,part1,freq) * squeeze(H_tilde(part1,part1,freq))^-1 * H_tilde(part1,part2,freq); 
-%     
-%  Hs22_tilde_converted(part2,part2,freq) = H(part2,part2,freq) -...
-%          H_tilde(part2,part1,freq) * squeeze(H_tilde(part1,part1,freq))^-1 * H(part1,part2,freq); 
-%     
-    
-end
-
-%%
-disp('Checking transfer function relation 2')
-clf
-diff_chk = Hs22_tilde_converted(part2,part2,:) - dir2_Hprime(part2,part2,:); 
-plot(abs(diff_chk(:)));
-ylim([-0.0001 0.0001])
+%If these are not multivariate we can plot them
+% clf
+% subplot(1,2,1)
+% plot(squeeze(Hs11_tilde_converted(1,1,:)))
+% plot(squeeze(H_dir1(1,1,:)))
+% 
+% subplot(1,2,2)
+% plot(squeeze(Hs22_tilde_converted(2,2,:)))
+% plot(squeeze(H_dir2(2,2,:)))
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%Predictive information 
