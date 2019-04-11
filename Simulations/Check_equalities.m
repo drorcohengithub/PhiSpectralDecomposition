@@ -1,30 +1,29 @@
 clear all
 close all
 
-
 %% load systems
 systems = Example_systems();
 
 %% we can try the bivariate sys in simulations (1-5)
 
-% system_indx = 5;
-% A = systems(system_indx).A;
-% SIG = systems(system_indx).SIG;
-% split_mask_A = ones(size(SIG));
-% split_mask_A(2,1)=0; %zero connection from 1 to 2
-% %from y to x
-% y = 1;
-% x = 2;
+system_indx = 5;
+A = systems(system_indx).A;
+SIG = systems(system_indx).SIG;
+split_mask_A = ones(size(SIG));
+split_mask_A(2,1)=0; %zero connection from 1 to 2
+%from y to x
+y = 1;
+x = 2;
 
 %% or we can try a multivariate system across an arbitrary partition (sys #6)
 A = systems(6).A;
  SIG = systems(6).SIG;
 
 %this defines the constraint on A. Here for GC between elements 1,2 (termed y) and 3-5 (termed x) 
-y = 1:2;
-x = 3:5;
-split_mask_A = ones(size(SIG));
-split_mask_A(x,y)=0;
+% y = 1:2;
+% x = 3:5;
+% split_mask_A = ones(size(SIG));
+% split_mask_A(x,y)=0;
 
 
 
