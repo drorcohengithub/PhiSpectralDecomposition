@@ -92,11 +92,10 @@ masked_Delta]... % errors during optimization covariace of the residuals of the 
 %% log ratio
 [sdecomp_ratio time_domain_ratio det_S] = ratio_of_dets(S, S_r, SIG, SIG_r);
 
-sdecomp_Phi_G = 1/2 *real(sdecomp_ratio);% note factor of half may have tiny imaginery vals
+sdecomp_Phi_G = 1/2 *real(sdecomp_ratio);% note factor of half, may have tiny imaginery vals
 Phi_G = 1/2 *time_domain_ratio;
 
 clf
-% may not be quite real
 subplot(1,2,1)
 bar(Phi_G)
 title('Phi_G time domain') 

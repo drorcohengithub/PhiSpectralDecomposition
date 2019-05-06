@@ -38,7 +38,7 @@ title('log_det_S_r')
 if size(log_det_S_r)
 %%
 subplot(4,1,4)
-ci_f = log_det_S_r-log_det_S_f;
+ci_f = (log_det_S_r-log_det_S_f)/2;
 plot(freqs,ci_f);
 ylim(ylims(4,:))
 title('ci_f')

@@ -1,6 +1,7 @@
 clear all
 close all
 
+
 %% load sys
 systems = Example_systems();
 
@@ -12,7 +13,7 @@ if strcmp(system_nm,'unidir_with_inst')
     ylims = [-5 1;
             -2 0;
             -2.5 2;
-            -0.05 2];
+            -0.05 1];
 elseif strcmp(system_nm,'bidir_with_inst')
     
     ylims = [-4 2;
