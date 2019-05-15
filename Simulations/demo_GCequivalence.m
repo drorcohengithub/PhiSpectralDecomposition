@@ -8,9 +8,9 @@ addpath(genpath('../Core'))
 N = 2; % # components
 K = 2; % order
 
+
 %% Uni directionally connected system with no inst connections
 SIG = [1 0; 0 0.7];
-
 
 % coeff
 A = zeros(N,N,K);
@@ -19,6 +19,17 @@ A(:,:,1) = [0.2 0;
 
 A(:,:,2) = [-0.25 0;
             -0.2 0.1]; % connectivity matrix at time t-2
+
+        
+ %% Bi directionally connected system with inst connections
+% SIG = [1 0.35; 0.35 0.9];
+%  
+% A(:,:,1) = [0.2 0.5;
+%             0.4 0.2]; % connectivity matrix at time t-1 (Aij = from j to i
+% 
+% A(:,:,2) = [-0.25 0.15;
+%             -0.2 0.1]; % connectivity matrix at time t-2
+
         
 %% we need the autocov seq. For that we use MVGC
 
@@ -48,7 +59,8 @@ Cov_XY = X(:,:,2:end);
 % For good estimate the maximum lag of the reduced model will be
 % much larger than that of the full model. A safe but potentially
 % over-generous strategy is to use the max lag of the autocov function
-max_order=size(Cov_XY,3);
+% max_order=size(Cov_XY,3);
+max_order = 2;
 
 % The spectral density matrix of the full model
 [S] = autocov_to_cpsd(X,freq_res);
@@ -64,7 +76,9 @@ results = [];
 % split_mask_A=[1 0;
 %               0 1];
 % More generally, the atomic partition is set using          
-split_mask_A=eye(N);
+
+% set the connection from 1 to 2 to 0
+split_mask_A = [1 1; 0 1];
   
 % The code also allows for constratins on the value of the covariance of the residuals, using the 
 % split_mask_SIG parameter. Though this works in practice we have not
@@ -94,15 +108,13 @@ masked_Delta]... % errors during optimization covariace of the residuals of the 
 %% log ratio
 [sdecomp_ratio time_domain_ratio det_S] = ratio_of_dets(S, S_r, SIG, SIG_r);
 
-sdecomp_Phi_G = 1/2 *real(sdecomp_ratio);% note factor of half, may have tiny imaginery vals
-Phi_G = 1/2 *time_domain_ratio;
+GC_ci = 1/2 * log (det(SIG_r)/det(SIG));
+GC_standard = 1/2 * log(SIG_r(2,2)/SIG(2,2));
 
-clf
-subplot(1,2,1)
-bar(Phi_G)
-title('Phi_G time domain') 
+fprintf('GC ci=%f GC_standard=%f\n',GC_ci,GC_standard);
 
-subplot(1,2,2)
-plot(freqs,sdecomp_Phi_G)
-title('Spectral decomp')
-xlabel('Frequency')
+%% check equivalence between partial covariance matrices between the full and disconnected model
+pc_full = SIG(1,1) - SIG(1,2)/SIG(2,2)*SIG(2,1);
+pc_dis = SIG_r(1,1) - SIG_r(1,2)/SIG_r(2,2)*SIG_r(2,1);
+
+fprintf('pc_full=%f pc_dis=%f\n',pc_full,pc_dis);
