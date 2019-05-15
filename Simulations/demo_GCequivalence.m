@@ -13,22 +13,22 @@ K = 2; % order
 SIG = [1 0; 0 0.7];
 
 % coeff
-A = zeros(N,N,K);
-A(:,:,1) = [0.2 0;
-            0.4 0.2]; % connectivity matrix at time t-1 (Aij = from j to i
-
-A(:,:,2) = [-0.25 0;
-            -0.2 0.1]; % connectivity matrix at time t-2
+% A = zeros(N,N,K);
+% A(:,:,1) = [0.2 0;
+%             0.4 0.2]; % connectivity matrix at time t-1 (Aij = from j to i
+% 
+% A(:,:,2) = [-0.25 0;
+%             -0.2 0.1]; % connectivity matrix at time t-2
 
         
  %% Bi directionally connected system with inst connections
-% SIG = [1 0.35; 0.35 0.9];
-%  
-% A(:,:,1) = [0.2 0.5;
-%             0.4 0.2]; % connectivity matrix at time t-1 (Aij = from j to i
-% 
-% A(:,:,2) = [-0.25 0.15;
-%             -0.2 0.1]; % connectivity matrix at time t-2
+SIG = [1 0.35; 0.35 0.9];
+ 
+A(:,:,1) = [0.2 0.5;
+            0.4 0.2]; % connectivity matrix at time t-1 (Aij = from j to i
+
+A(:,:,2) = [-0.25 0.15;
+            -0.2 0.1]; % connectivity matrix at time t-2
 
         
 %% we need the autocov seq. For that we use MVGC
@@ -106,14 +106,15 @@ masked_Delta]... % errors during optimization covariace of the residuals of the 
     split_mask_A,split_mask_SIG,max_order,freq_res,iter_max,gamma,min_error);    
 
 %% log ratio
-[sdecomp_ratio time_domain_ratio det_S] = ratio_of_dets(S, S_r, SIG, SIG_r);
+% [sdecomp_ratio time_domain_ratio det_S] = ratio_of_dets(S, S_r, SIG, SIG_r);
 
+%% check equivalence between the standard definition of Granger causality and our derivation
 GC_ci = 1/2 * log (det(SIG_r)/det(SIG));
 GC_standard = 1/2 * log(SIG_r(2,2)/SIG(2,2));
 
 fprintf('GC ci=%f GC_standard=%f\n',GC_ci,GC_standard);
 
-%% check equivalence between partial covariance matrices between the full and disconnected model
+%% check equality between partial covariance matrices between the full and disconnected model
 pc_full = SIG(1,1) - SIG(1,2)/SIG(2,2)*SIG(2,1);
 pc_dis = SIG_r(1,1) - SIG_r(1,2)/SIG_r(2,2)*SIG_r(2,1);
 
