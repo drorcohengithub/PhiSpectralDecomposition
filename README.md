@@ -1,4 +1,5 @@
 # Spectral decomposition of integrated information
+## Code to compute spectral decompositions of causal influences and reproduce figures from our paper 
 
 Computes the spectral decomposition of integrated information (and other measures) as described in our paper:
 
